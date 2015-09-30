@@ -1,0 +1,19 @@
+
+*.swp
+*.o
+
+# compiled matlab files
+*.mex
+*.mexa64
+
+bin/
+
+
+CMakeCache.txt
+Makefile
+CMakeFiles/
+cmake_install.cmake
+
+tags
+
+a.out
