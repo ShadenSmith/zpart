@@ -32,10 +32,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-file(GLOB ZPART_SOURCES *.c)
+file(GLOB ZPART_SOURCES src/*.c)
 add_executable(zpart_bin ${ZPART_SOURCES})
+set_target_properties(zpart_bin PROPERTIES OUTPUT_NAME zpart)
 
 target_link_libraries(zpart_bin m)
 target_link_libraries(zpart_bin ${MPI_C_LIBRARIES})
 target_link_libraries(zpart_bin zoltan)
 install(TARGETS zpart_bin RUNTIME DESTINATION bin)
+

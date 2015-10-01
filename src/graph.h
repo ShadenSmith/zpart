@@ -22,7 +22,6 @@ typedef struct
 {
   ZOLTAN_ID_TYPE nglobal_v;   /** Number of vertices in the global hgraph. */
   ZOLTAN_ID_TYPE nglobal_h;   /** Number of hedges in the global hgraph. */
-  ZOLTAN_ID_TYPE nglobal_con; /** Sum of vertices in all hedges, globally. */
 
   int nlocal_v;   /** Number of vertices in the local hgraph. */
   int nlocal_h;   /** Number of hedges in the local hgraph. */
@@ -50,6 +49,20 @@ typedef struct
 /******************************************************************************
  * PUBLIC FUNCTIONS
  *****************************************************************************/
+
+#define distribute_hgraph zpart_disribute_hgraph
+/**
+* @brief Load a hypergraph and distribute it among processes.
+*
+* @param fname The file to read from.
+* @param comm The MPI communicator to distribute among.
+*
+* @return My owned hgraph. NULL on error.
+*/
+hgraph * distribute_hgraph(
+    char const * const fname,
+    MPI_Comm comm);
+
 
 #define hgraph_alloc zpart_hgraph_alloc
 /**
