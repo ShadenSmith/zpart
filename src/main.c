@@ -7,6 +7,7 @@
 #include <mpi.h>
 
 #include "graph.h"
+#include "part.h"
 
 
 /******************************************************************************
@@ -36,6 +37,15 @@ int main(
     return EXIT_FAILURE;
   }
 
+  char * endptr;
+  int const nparts = (int) strtol(argv[2], &endptr, 10);
+  if(endptr == argv[2]) {
+    printf("ZPART: integer expected for #partitions\n");
+    MPI_Finalize();
+    return EXIT_FAILURE;
+  }
+
+  partition(hg, MPI_COMM_WORLD, nparts);
 
   hgraph_free(hg);
 

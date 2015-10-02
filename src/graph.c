@@ -372,3 +372,92 @@ void hgraph_free(
   free(hg->eind);
   free(hg);
 }
+
+
+
+/******************************************************************************
+ * QUERY FUNCTIONS
+ *****************************************************************************/
+int hg_get_nvtx(
+    void * data,
+    int * ierr)
+{
+  hgraph const * const hg = (hgraph *) data;
+  *ierr = ZOLTAN_OK;
+  return hg->nlocal_v;
+}
+
+void hg_get_vlist(
+    void * data,
+    int gid_size,
+    int lid_size,
+    ZOLTAN_ID_PTR gids,
+    ZOLTAN_ID_PTR lids,
+    int wt_size,
+    float * vtx_wts,
+    int * ierr)
+{
+  hgraph const * const hg = (hgraph *) data;
+  *ierr = ZOLTAN_OK;
+
+  /* fill in global ids */
+  memcpy(gids, hg->v_gids, hg->nlocal_v * sizeof(ZOLTAN_ID_TYPE));
+
+  /* local ids are optional */
+  if(lid_size > 0 && lids != NULL) {
+    for(int i=0; i < hg->nlocal_v; ++i) {
+      lids[i] = i;
+    }
+  }
+}
+
+
+void hg_get_netsizes(
+    void * data,
+    int * num_lists,
+    int * num_nonzeroes,
+    int * format,
+    int * ierr)
+{
+  hgraph const * const hg = (hgraph *) data;
+  *ierr = ZOLTAN_OK;
+
+  /* fill in hedge sizes */
+  *num_lists = hg->nlocal_h;
+  *num_nonzeroes = hg->nlocal_con;
+  *format = ZOLTAN_COMPRESSED_EDGE;
+}
+
+
+void hg_get_hlist(
+    void * data,
+    int gid_size,
+    int nhedges,
+    int ncon,
+    int format,
+    ZOLTAN_ID_PTR h_gids,
+    int * eptr,
+    ZOLTAN_ID_PTR eind,
+    int * ierr)
+{
+  hgraph const * const hg = (hgraph *) data;
+  *ierr = ZOLTAN_OK;
+
+  assert(gid_size == 1);
+
+  /* sanity check */
+  if((nhedges != hg->nlocal_h) || (ncon != hg->nlocal_con) ||
+       (format != ZOLTAN_COMPRESSED_EDGE)) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  /* fill in hyperedge pointer info */
+  memcpy(h_gids, hg->h_gids, nhedges * sizeof(ZOLTAN_ID_TYPE));
+  memcpy(eptr, hg->eptr, nhedges * sizeof(int));
+
+  /* fill in eind */
+  memcpy(eind, hg->eind, ncon * sizeof(ZOLTAN_ID_TYPE));
+}
+
+

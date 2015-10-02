@@ -91,4 +91,45 @@ void hgraph_free(
     hgraph * const hg);
 
 
+
+/******************************************************************************
+ * QUERY FUNCTIONS
+ *****************************************************************************/
+#define hg_get_nvtx zpart_hg_get_nvtx
+int hg_get_nvtx(
+    void * data,
+    int * ierr);
+
+
+#define hg_get_vlist zpart_hg_get_vlist
+void hg_get_vlist(
+    void * data,
+    int gid_size,
+    int lid_size,
+    ZOLTAN_ID_PTR gids,
+    ZOLTAN_ID_PTR lids,
+    int wt_size,
+    float * vtx_wts,
+    int * ierr);
+
+#define hg_get_netsizes zpart_hg_get_netsizes
+void hg_get_netsizes(
+    void * data,
+    int * num_lists,
+    int * num_nonzeroes,
+    int * format,
+    int * ierr);
+
+#define hg_get_hlist zpart_hg_get_hlist
+void hg_get_hlist(
+    void * data,
+    int gid_size,
+    int nhedges,
+    int ncon,
+    int format,
+    ZOLTAN_ID_PTR h_gids,
+    int * eptr,
+    ZOLTAN_ID_PTR eind,
+    int * ierr);
+
 #endif

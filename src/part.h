@@ -14,8 +14,8 @@
  *****************************************************************************/
 
 void partition(
-  hgraph * hg,
-  MPI_Comm comm,
-  int nparts);
+    hgraph * hg,
+    MPI_Comm comm,
+    int nparts);
 
 #endif
