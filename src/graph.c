@@ -189,6 +189,11 @@ static hgraph * __send_graph(
       buf = __accum_line(fin, buf, lengths + h, &bsize, &ncon);
     }
 
+    /* zero-index buf */
+    for(idx_t b=0; b < bsize; ++b) {
+      --buf[b];
+    }
+
     idx_t start;
 
     /* send counts */
@@ -221,19 +226,27 @@ static hgraph * __send_graph(
   free(vids);
   free(hids);
 
+  int local_vtxs   = nvtxs - ((npes-1) * vtarget);
+  int local_hedges = nhedges - ((npes-1) * htarget);
+
+  /* resize lengths */
+  lengths = (int *) realloc(lengths, (local_hedges+1) * sizeof(int));
+
   /* root takes the rest */
-  idx_t ncon;
+  idx_t ncon = 0;
   idx_t vstart = (npes-1) * vtarget;
   idx_t hstart = (npes-1) * htarget;
   for(idx_t h=hstart; h < nhedges; ++h) {
     buf = __accum_line(fin, buf, lengths + (h-hstart), &bsize, &ncon);
   }
-
-
-  int local_vtxs   = nvtxs - ((npes-1) * vtarget);
-  int local_hedges = nhedges - ((npes-1) * htarget);
+  /* zero-index buf */
+  for(idx_t b=0; b < bsize; ++b) {
+    --buf[b];
+  }
 
   hgraph * hg = hgraph_alloc(local_vtxs, local_hedges, ncon);
+  hg->nlocal_v = local_vtxs;
+  hg->nlocal_h = local_hedges;
 
   /* fill in vids and hids */
   for(idx_t v=vstart; v < nvtxs; ++v) {
@@ -298,6 +311,11 @@ static hgraph * __recv_graph(
   /* store everything in a structure */
   hgraph * hg = hgraph_alloc(local_vtxs, local_hedges, ncon);
 
+  hg->nglobal_v = nvtxs;
+  hg->nglobal_h = nhedges;
+  hg->nlocal_v = local_vtxs;
+  hg->nlocal_h = local_hedges;
+
   /* receive vertex and hedge ids */
   MPI_Recv(hg->v_gids, local_vtxs, ZOLTAN_ID_MPI_TYPE, 0, DEF_TAG, comm,
       &status);
@@ -316,9 +334,6 @@ static hgraph * __recv_graph(
     hg->eptr[i] = saved + hg->eptr[i-1];
     saved = tmp;
   }
-
-  hg->nglobal_v = nvtxs;
-  hg->nglobal_h = nhedges;
 
   return hg;
 }
@@ -351,13 +366,15 @@ hgraph * hgraph_alloc(
 {
   hgraph * hg = (hgraph *) malloc(sizeof(hgraph));
 
+  hg->nlocal_h   = local_hedges;
+  hg->nlocal_v   = local_vtxs;
+  hg->nlocal_con = local_connections;
+
   hg->v_gids = (idx_t *) malloc(local_vtxs * sizeof(idx_t));
-  hg->h_gids = (idx_t *) malloc(local_hedges * \
-      sizeof(idx_t));
+  hg->h_gids = (idx_t *) malloc(local_hedges * sizeof(idx_t));
 
   hg->eptr = (int *) malloc((local_hedges+1) * sizeof(int));
-  hg->eind = (idx_t *) malloc(local_connections * \
-      sizeof(idx_t));
+  hg->eind = (idx_t *) malloc(local_connections * sizeof(idx_t));
 
   return hg;
 }
@@ -401,7 +418,9 @@ void hg_get_vlist(
   *ierr = ZOLTAN_OK;
 
   /* fill in global ids */
-  memcpy(gids, hg->v_gids, hg->nlocal_v * sizeof(ZOLTAN_ID_TYPE));
+  for(int v=0; v < hg->nlocal_v; ++v) {
+    gids[v] = hg->v_gids[v];
+  }
 
   /* local ids are optional */
   if(lid_size > 0 && lids != NULL) {
@@ -410,7 +429,6 @@ void hg_get_vlist(
     }
   }
 }
-
 
 void hg_get_netsizes(
     void * data,
@@ -453,11 +471,20 @@ void hg_get_hlist(
   }
 
   /* fill in hyperedge pointer info */
+  for(int h=0; h < nhedges; ++h) {
+    h_gids[h] = hg->h_gids[h];
+    eptr[h] = hg->eptr[h];
+  }
+#if 0
   memcpy(h_gids, hg->h_gids, nhedges * sizeof(ZOLTAN_ID_TYPE));
   memcpy(eptr, hg->eptr, nhedges * sizeof(int));
+#endif
 
   /* fill in eind */
-  memcpy(eind, hg->eind, ncon * sizeof(ZOLTAN_ID_TYPE));
+  //memcpy(eind, hg->eind, ncon * sizeof(ZOLTAN_ID_TYPE));
+  for(int n=0; n < ncon; ++n) {
+    eind[n] = hg->eind[n];
+  }
 }
 
 
