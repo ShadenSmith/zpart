@@ -4,6 +4,7 @@
  * INCLUDES
  *****************************************************************************/
 #include "graph.h"
+#include "timer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,10 +83,11 @@ int * partition(
     MPI_Comm comm,
     int nparts)
 {
-  printf("nv: %d nh: %d ncon: %d\n", hg->nlocal_v, hg->nlocal_h, hg->nlocal_con);
-
   /* initialize zoltan and set parameters */
   struct Zoltan_Struct * zz = __init_zoltan(comm, hg, nparts);
+
+  int rank;
+  MPI_Comm_rank(comm, &rank);
 
   /* zoltan output vars */
   int changes;
@@ -95,6 +97,10 @@ int * partition(
   ZOLTAN_ID_PTR export_gids, export_lids;
   int * import_ranks, * import_part;
   int * export_ranks, * export_part;
+
+  MPI_Barrier(comm);
+  zp_timer_t part_time;
+  timer_fstart(&part_time);
 
   /* do the partitioning */
   int rc = Zoltan_LB_Partition(zz,
@@ -107,6 +113,12 @@ int * partition(
     MPI_Finalize();
     Zoltan_Destroy(&zz);
     exit(1);
+  }
+
+  MPI_Barrier(comm);
+  timer_stop(&part_time);
+  if(rank == 0) {
+    printf("Zoltan/PHG partitioning time: %0.3fs\n", part_time.seconds);
   }
 
   /* process part lists */
