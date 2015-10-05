@@ -51,7 +51,7 @@ static struct Zoltan_Struct * __init_zoltan(
   Zoltan_Set_Param(zz, "HYPERGRAPH_PACKAGE", "PHG");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
-  Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
+  Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTS");
   Zoltan_Set_Param(zz, "CHECK_HYPERGRAPH", "1");
 
   /* default weights */
@@ -77,7 +77,7 @@ static struct Zoltan_Struct * __init_zoltan(
 /******************************************************************************
  * PUBLIC FUNCTIONS
  *****************************************************************************/
-void partition(
+int * partition(
     hgraph * hg,
     MPI_Comm comm,
     int nparts)
@@ -91,13 +91,11 @@ void partition(
   int changes;
   int gid_size, lid_size;
   int nimport, nexport;
-  int myRank, numProcs;
   ZOLTAN_ID_PTR import_gids, import_lids;
   ZOLTAN_ID_PTR export_gids, export_lids;
   int * import_ranks, * import_part;
   int * export_ranks, * export_part;
 
-#if 1
   /* do the partitioning */
   int rc = Zoltan_LB_Partition(zz,
         &changes,
@@ -107,12 +105,79 @@ void partition(
   if (rc != ZOLTAN_OK){
     fprintf(stderr, "ZPART: Zoltan_LB_Partition() returned %d\n", rc);
     MPI_Finalize();
-    exit(1);
     Zoltan_Destroy(&zz);
+    exit(1);
   }
-#endif
+
+  /* process part lists */
+  int * parts = (int *) malloc(hg->nlocal_v * sizeof(int));
+  for(int v=0; v < hg->nlocal_v; ++v) {
+    parts[export_lids[v]] = export_part[v];
+  }
 
   /* cleanup */
+  Zoltan_LB_Free_Part(&import_gids, &import_lids, &import_ranks, &import_part);
+  Zoltan_LB_Free_Part(&export_gids, &export_lids, &export_ranks, &export_part);
   Zoltan_Destroy(&zz);
+
+  return parts;
 }
+
+
+void write_parts(
+    MPI_Comm comm,
+    int const * const parts,
+    int nvtxs,
+    char const * const fname)
+{
+  int rank, npes;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &npes);
+
+  FILE * fout;
+  if(rank == 0) {
+    if((fout = fopen(fname, "w")) == NULL) {
+      fprintf(stderr, "ZPART: failed to open '%s'\n", fname);
+      MPI_Finalize();
+      exit(1);
+    }
+  }
+
+
+  if(rank == 0) {
+    int * part_buf = NULL;
+    int buf_size = 0;
+    MPI_Status status;
+    /* receive from each rank */
+    for(int p=1; p < npes; ++p) {
+      /* receive partition info */
+      int newsize;
+      MPI_Recv(&newsize, 1, MPI_INT, p, DEF_TAG, comm, &status);
+      part_buf = realloc(part_buf, newsize * sizeof(int));
+      MPI_Recv(part_buf, newsize, MPI_INT, p, DEF_TAG, comm, &status);
+
+      /* now write to file */
+      for(int v=0; v < newsize; ++v) {
+        fprintf(fout, "%d\n", part_buf[v] + 1);
+      }
+    }
+    free(part_buf);
+
+    /* now write own vertices */
+    for(int v=0; v < nvtxs; ++v) {
+      fprintf(fout, "%d\n", parts[v] + 1);
+    }
+
+  } else {
+    /* just send part info */
+    MPI_Send(&nvtxs, 1, MPI_INT, 0, DEF_TAG, comm);
+    MPI_Send(parts, nvtxs, MPI_INT, 0, DEF_TAG, comm);
+  }
+
+  if(rank == 0) {
+    fclose(fout);
+  }
+}
+
+
 

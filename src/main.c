@@ -45,8 +45,11 @@ int main(
     return EXIT_FAILURE;
   }
 
-  partition(hg, MPI_COMM_WORLD, nparts);
+  int * myparts = partition(hg, MPI_COMM_WORLD, nparts);
 
+  write_parts(MPI_COMM_WORLD, myparts, hg->nlocal_v, argv[3]);
+
+  free(myparts);
   hgraph_free(hg);
 
   MPI_Finalize();

@@ -13,9 +13,15 @@
  * FUNCTIONS
  *****************************************************************************/
 
-void partition(
+int * partition(
     hgraph * hg,
     MPI_Comm comm,
     int nparts);
+
+void write_parts(
+    MPI_Comm comm,
+    int const * const parts,
+    int nvtxs,
+    char const * const fname);
 
 #endif
