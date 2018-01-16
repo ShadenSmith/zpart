@@ -27,8 +27,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-parameter")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-function")
-# Unfortunately, these warnings pop up in GCC 5.1 despite our MAX_NMODES checks
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-array-bounds")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 

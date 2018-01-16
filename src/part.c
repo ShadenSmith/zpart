@@ -170,14 +170,14 @@ void write_parts(
 
       /* now write to file */
       for(int v=0; v < newsize; ++v) {
-        fprintf(fout, "%d\n", part_buf[v] + 1);
+        fprintf(fout, "%d\n", part_buf[v]);
       }
     }
     free(part_buf);
 
     /* now write own vertices */
     for(int v=0; v < nvtxs; ++v) {
-      fprintf(fout, "%d\n", parts[v] + 1);
+      fprintf(fout, "%d\n", parts[v]);
     }
 
   } else {
