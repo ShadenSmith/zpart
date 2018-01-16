@@ -22,16 +22,16 @@ Building
 Though supported, we do not recommend an in-source build. You can build `ZPart`
 via:
 
-  $ mkdir build && cd build
-  $ cmake <PATH_TO_ZPART>
-  $ make
+    $ mkdir build && cd build
+    $ cmake <PATH_TO_ZPART>
+    $ make
 
 Running
 -------
 After building `ZPart`, an executable is found in location `bin/zpart`. You
 can run via:
 
-  $ mpirun -np <NUM_PROCS> ./bin/zpart [hgraph] [nparts] [output]
+    $ mpirun -np <NUM_PROCS> ./bin/zpart [hgraph] [nparts] [output]
 
 After running, `output` will store the assigned partition for each vertex in
 the hypergraph (0-indexed).
